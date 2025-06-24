@@ -1,0 +1,13 @@
+
+    - Print simple messages (no formatting)         [ ]
+    - Buffer bounds checking                        [ ]
+    - Argument buffer                               [ ]
+    - Character formatting                          [ ]
+    - Left padding                                  [ ]
+    - Right padding                                 [ ]
+    - String formatting                             [ ]
+    - Decimal formatting                            [ ]
+    - Binary formatting                             [ ]
+    - Hexadecimal formatting                        [ ]
+    - Octal formatting                              [ ]
+    - Boolean formatting                            [ ] 
