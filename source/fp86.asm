@@ -3,12 +3,16 @@
 # This file gets all the work done
 
 .section .bss
-	.buffer: .zero 2048
+	.buffer:  .zero 2048
+	.buf_off: .zero 8
+	.finalfd: .zero 8
 
 .section .rodata
 	.buffer_length: .quad 2048
 
 .section .data
+	.stk_off: .quad 16
+
  	# This is a global flag used to know whether
 	# store all r8 throught r9 registers before using
 	# them here, in order to save their values
@@ -56,15 +60,56 @@
 fp86:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	movq	(fp_reg_backup), %rax
-	cmpq	$1, %rax
-	jne	.loop
+	cmpq	$1, (fp_reg_backup)
+	jne	.decolle
 	subq	$64, %rsp
 	BACKUP_A
+.decolle:
+	cmpq	$0, %rsi
+	je	.null_rdi
+	movq	%rdi, (.finalfd)
+	#  r8: holds format string content
+	#  r9: holds buffer
+	# r10: holds number of bytes written so far into buffer
+	movq	%rsi, %r8
+	leaq	.buffer(%rip),  %r9
+	movq	.buf_off(%rip), %r10
+	xorq	%rax, %rax
+	xorq	%rdi, %rdi
+	xorq	%rsi, %rsi
 .loop:
+	movzbl	(%r8), %eax
+	cmpb	$0, %al
+	je	.fini
+	cmpb	$'%', %al
+	je	.format
+	movb	%al, (%r9)
+	incq	%r9
+	incq	%r10
+	jmp	.resume
+.format:
 
+.resume:
+	incq	%r8
+	jmp	.loop
+.null_rdi:
+	movq	$-1, %r9
+	jmp	.return
+.fini:
+	movq	$1, %rax
+	movq	(.finalfd), %rdi
+	movq	%r10, %rdx
+	leaq	.buffer(%rip), %rsi
+	syscall
+
+	movq	$16, (.stk_off)
+	movq	$0,  (.buf_off)
+	cmpq	$1, (fp_reg_backup)
+	jne	.return
+	BACKUP_Z
 .return:
 	movq	$0, (fp_reg_backup)
+	movq	%r9, %rax
 	leave
 	ret
 
