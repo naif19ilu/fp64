@@ -1,7 +1,7 @@
 
     - Print simple messages (no formatting)         [x]
     - Buffer bounds checking                        [x]
-    - Percentage formatting                         [ ]
+    - Percentage formatting                         [x]
     - Argument buffer                               [ ]
     - Character formatting                          [ ]
     - Left padding                                  [ ]
@@ -12,3 +12,4 @@
     - Hexadecimal formatting                        [ ]
     - Octal formatting                              [ ]
     - Boolean formatting                            [ ] 
+    - Better error handling

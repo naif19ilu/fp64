@@ -23,7 +23,6 @@
 
 .section .text
 
-
 .macro BACKUP_A
 	movq	%r8,  -8(%rbp)
 	movq	%r9,  -16(%rbp)
@@ -53,6 +52,13 @@
 	leaq	.buffer(%rip), %rsi
 	syscall
 .endm
+
+.macro ABORT status
+	movq	$60, %rax
+	movq	\status, %rdi
+	syscall
+.endm
+
 
 .globl fp86
 # fprintf function for x86_64 usage:
@@ -86,7 +92,7 @@ fp86:
 	xorq	%rdi, %rdi
 	xorq	%rsi, %rsi
 .loop:
-	cmpq	$5, %r10
+	cmpq	$2048, %r10
 	je	.full
 	movzbl	(%r8), %eax
 	cmpb	$0, %al
@@ -98,6 +104,21 @@ fp86:
 	incq	%r10
 	jmp	.resume
 .format:
+	incq	%r8
+	movzbl	(%r8), %eax
+	cmpb	$'%', %al
+	je	.fmt_per
+
+	jmp	.fmt_unk
+
+.fmt_per:
+	movb	$'%', (%r9)
+	incq	%r9
+	incq	%r10
+	jmp	.resume
+
+.fmt_unk:
+	ABORT	$-1
 
 .resume:
 	incq	%r8
@@ -119,7 +140,7 @@ fp86:
 	BACKUP_Z
 .return:
 	movq	$0, (fp_reg_backup)
-	movq	%r9, %rax
+	movq	%r10, %rax
 	leave
 	ret
 

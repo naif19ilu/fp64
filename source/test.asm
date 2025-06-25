@@ -3,7 +3,7 @@
 # This file tests fp86 functionallity
 
 .section .rodata
-	.test: .string "123456789009876543211234567890098765432112345678900987654321\n"
+	.test: .string "hola%%como%%estas?\n"
 
 .section .text
 
@@ -14,6 +14,6 @@ _start:
 	leaq	.test(%rip), %rsi
 	call	fp86
 
+ 	movq	%rax, %rdi
 	movq	$60, %rax
-	movq	$60, %rdi
 	syscall
