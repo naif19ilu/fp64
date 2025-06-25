@@ -46,6 +46,14 @@
 	movq	-64(%rbp), %r15
 .endm
 
+.macro WRITE
+	movq	$1, %rax
+	movq	(.finalfd), %rdi
+	movq	%r10, %rdx
+	leaq	.buffer(%rip), %rsi
+	syscall
+.endm
+
 .globl fp86
 # fprintf function for x86_64 usage:
 # 1st argument (rdi): file descriptor  8 byte
@@ -78,6 +86,8 @@ fp86:
 	xorq	%rdi, %rdi
 	xorq	%rsi, %rsi
 .loop:
+	cmpq	$5, %r10
+	je	.full
 	movzbl	(%r8), %eax
 	cmpb	$0, %al
 	je	.fini
@@ -95,13 +105,13 @@ fp86:
 .null_rdi:
 	movq	$-1, %r9
 	jmp	.return
+.full:
+	WRITE
+	movq	$0, %r10
+	leaq	.buffer(%rip), %r9
+	jmp	.loop
 .fini:
-	movq	$1, %rax
-	movq	(.finalfd), %rdi
-	movq	%r10, %rdx
-	leaq	.buffer(%rip), %rsi
-	syscall
-
+	WRITE
 	movq	$16, (.stk_off)
 	movq	$0,  (.buf_off)
 	cmpq	$1, (fp_reg_backup)

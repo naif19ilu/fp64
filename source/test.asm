@@ -3,7 +3,7 @@
 # This file tests fp86 functionallity
 
 .section .rodata
-	.test: .string "hola\n"
+	.test: .string "123456789009876543211234567890098765432112345678900987654321\n"
 
 .section .text
 

@@ -1,6 +1,7 @@
 
     - Print simple messages (no formatting)         [x]
-    - Buffer bounds checking                        [ ]
+    - Buffer bounds checking                        [x]
+    - Percentage formatting                         [ ]
     - Argument buffer                               [ ]
     - Character formatting                          [ ]
     - Left padding                                  [ ]
