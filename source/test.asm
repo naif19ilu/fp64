@@ -3,13 +3,16 @@
 # This file tests fp86 functionallity
 
 .section .rodata
-	.test: .string "hola%%como%%estas?\n"
+	.test: .string "h%c\n"
 
 .section .text
 
 .globl _start
 
 _start:
+
+	movq	$69, %rdx
+
 	movq	$1, %rdi
 	leaq	.test(%rip), %rsi
 	call	fp86
