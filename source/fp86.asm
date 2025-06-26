@@ -15,6 +15,13 @@
 	.padding:  .zero 8
 	.pad_twds: .zero 1
 
+ 	# indicates if the current argument is a number
+	# 1 for yes
+	.args_num: .zero 1
+
+	# indicates if the number is negative (in order to put '-' sign)
+	.args_neg: .zero
+
 .section .rodata
 	.buffer_length: .quad 2048
 
@@ -148,6 +155,14 @@ fp86:
 	# strings...
 	cmpb	$'s', %dil
 	je	.fp_fmt_st
+	# numbers...
+	cmpb	$'d', %dil
+	je	.fp_fmt_dc
+	cmpb	$'b', %dil
+	je	.fp_fmt_bn
+	cmpb	$'o', %dil
+	je	.fp_fmt_oc
+
 	jmp	.fatal_1
 .fp_fmt_per:
 	movb	$'%', (%r9)
@@ -178,18 +193,61 @@ fp86:
 	movzbl	(%r15), %edi
 	cmpb	$0, %dil
 	je	.fp_fmt_wrt
-
 	cmpq	$2048, %r12
 	je	.fatal_2
-
 	movb	%dil, (%r11)
 	incq	%r11
 	incq	%r12
 	incq	%r15
-
 	jmp	.fp_fmt_st_loop
+.fp_fmt_dc:
+	movq	$10, %rbx
+	jmp	.fp_fmt_num
+.fp_fmt_bn:
+	movq	$2, %rbx
+	jmp	.fp_fmt_num
+.fp_fmt_oc:
+	movq	$8, %rbx
+	jmp	.fp_fmt_num
+.fp_fmt_num:
+	cmpq	$0, %r15
+	jg	.fp_fmt_num_set
+	cmpq	$0, %r15
+	jl	.fp_fmt_num_neg
+	movb	$'0', (%r11)
+	incq	%r12
+	jmp	.fp_fmt_wrt
+.fp_fmt_num_neg:
+	movb	$1, (.args_neg)
+	negq	%r15
+.fp_fmt_num_set:
+ 	# We need to start writing the number in the
+	# inverse order
+	addq	$2048, %r11
+	movq	%r15, %rax
+	xorq	%rdx, %rdx
+	movb	$1, (.args_num)
+.fp_fmt_num_loop:
+	cmpq	$0, %rax
+	je	.fp_fmt_num_fini
+	cmpq	$2048, %r12
+	je	.fatal_2
+	divq	%rbx
+	movb	%dl, (%r11)
+	addb	$'0', (%r11)
+	decq	%r11
+	incq	%r12
+	xorq	%rdx, %rdx
+	jmp	.fp_fmt_num_loop
+.fp_fmt_num_fini:
+	cmpb	$1, (.args_neg)
+	jne	.fp_fmt_wrt
+	movb	$'-', (%r11)
+	decq	%r11
+	incq	%r12
 
-
+	movb	$0, (.args_neg)
+	jmp	.fp_fmt_wrt
 .fp_fmt_wrt:
 	cmpb	$'<', (.pad_twds)
 	je	.fp_fmt_wrt_lp
@@ -217,8 +275,14 @@ fp86:
 	incq	%rcx
 	jmp	.fp_fmt_wrt_lp_loop
 .fp_fmt_wrt_ok:
-	leaq	.tempbff(%rip), %rdi
 	xorq	%rcx, %rcx
+	cmpb	$1, (.args_num)
+	jne	.fp_fmt_wrt_ok_nonum
+	incq	%r11
+	movq	%r11, %rdi
+	jmp	.fp_fmt_wrt_ok_loop
+.fp_fmt_wrt_ok_nonum:
+	leaq	.tempbff(%rip), %rdi
 .fp_fmt_wrt_ok_loop:
 	cmpq	%rcx, %r12
 	je	.fp_fmt_wrt_rp
@@ -253,6 +317,7 @@ fp86:
 	jmp	.fp_fmt_wrt_rp_loop
 .fp_fmt_wrt_reset:
 	movb	$0, (.pad_twds)
+	movb	$0, (.args_num)
 	jmp	.fp_resume
 .fp_resume:
 	incq	%r8
