@@ -7,10 +7,6 @@
 	.buf_off: .zero 8
 	.finalfd: .zero 8
 
- 	# Temporary storage for argument before
-	# write it into real buffer
-	#
-	# This buffer length's 2048 - buf_off
 	.tempbff: .zero 2048
 	.tmp_off: .zero 8
 
@@ -104,8 +100,7 @@ fp86:
 	#  r9: holds buffer
 	# r10: holds number of bytes written so far into buffer
 	# r11: holds the temporary buffer
-	# r12: holds the bytes left in buffer as the argument is being written in tempbff
-	# r13: holds the tempbff's length
+	# r12: holds the tempbff's length
 	# r15: holds the current argument
 	movq	%rsi, %r8
 	leaq	.buffer(%rip),  %r9
@@ -114,11 +109,15 @@ fp86:
 	xorq	%rdi, %rdi
 	xorq	%rsi, %rsi
 .fp_loop:
-	cmpq	$2048, %r10
-	je	.fp_full_buff
+	cmpq	$1, %r10
+	jne	.fp_loop_body
+.fp_nml_full:
+	leaq	.fp_loop(%rip), %rax
+	jmp	.fp_full_buff
+.fp_loop_body:
 	movzbl	(%r8), %eax
 	cmpb	$0, %al
-	je	.fp_fiin
+	je	.fp_fin
 	cmpb	$'%', %al
 	je	.fp_format
 	# if no format is provided then store this character
@@ -141,10 +140,7 @@ fp86:
 .fp_fmt_arg:
  	# Setting up temporary buffer
 	leaq	.tempbff(%rip), %r11
-	movq	%r10, %rax
-	subq	$2048, %rax
-	movq	%rax, %r12
-	xorq	%r13, %r13
+	xorq	%r12, %r12
 	call	.GetArg
 	# characters...
 	cmpb	$'c', %dil
@@ -162,27 +158,33 @@ fp86:
 	call	.GetArg
 	movq	%r15, (.padding)
 	movb	%dil, (.pad_twds)
+	# if there's padding indicator edi will not contain the
+	# argument type but the padding type, so we need go one
+	# character further to know it
+	# example: "%>s"
+	#            |` this is what specifies arg type
+	#            ` this is edi
+	incq	%r8
+	movzbl	(%r8), %edi
 	jmp	.fp_fmt_arg
 .fp_fmt_ch:
 	movb	%r15b, (%r11)
-	incq	%r12
-	movq	$1, %r13
+	movq	$1, %r12
 	jmp	.fp_fmt_wrt
 
 .fp_fmt_st:
 
-
 .fp_fmt_wrt:
-	xorq	%rdi, %rdi
-	movb	(.pad_twds), %dil
-	cmpb	$'<', %dil
+	cmpb	$'<', (.pad_twds)
 	je	.fp_fmt_wrt_lp
 	jmp	.fp_fmt_wrt_ok
-
 .fp_fmt_wrt_lp:
+ 	# getting the number of spaces the program
+	# has to add padding - r12
 	movq	(.padding), %rax
-	subq	%r13, %rax
+	subq	%r12, %rax
 	js	.fp_fmt_wrt_ok
+	jz	.fp_fmt_wrt_ok
 	movq	%rax, %rbx
 	xorq	%rcx, %rcx
 .fp_fmt_wrt_lp_loop:
@@ -195,12 +197,11 @@ fp86:
 	je	.fatal_1														# FIX THIS
 	incq	%rcx
 	jmp	.fp_fmt_wrt_lp_loop
-
 .fp_fmt_wrt_ok:
 	leaq	.tempbff(%rip), %rdi
 	xorq	%rcx, %rcx
 .fp_fmt_wrt_ok_loop:
-	cmpq	%rcx, %r13
+	cmpq	%rcx, %r12
 	je	.fp_resume
 	movzbl	(%rdi), %eax
 	movb	%al, (%r9)
@@ -219,12 +220,14 @@ fp86:
 	movq	$-1, %r10
 	jmp	.fp_return
 .fp_full_buff:
+	pushq	%rax
 	WRITE
 	movq	$0, (.buf_off)
 	xorq	%r10, %r10
 	leaq	.buffer(%rip), %r9
-	jmp	.fp_loop
-.fp_fiin:
+	popq	%rax
+	jmp	*%rax
+.fp_fin:
 	WRITE
 	movq	$16, (.stk_off)
 	movq	$0,  (.buf_off)
@@ -253,7 +256,12 @@ fp86:
 
 
 # unknown fp_formatting given
-# example "%R" like wtf does R mean?
+# example: "%R" like wtf does R mean?
 .fatal_1:
 	ABORT	$-1
+
+# argument causes buffer overflow
+# example: A string is more than 2048 bytes long
+.fatal_2:
+	ABORT	$-2
 
