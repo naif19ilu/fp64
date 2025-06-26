@@ -191,11 +191,10 @@ fp86:
 	cmpq	%rcx, %rbx
 	je	.fp_fmt_wrt_ok
 	movb	$' ', (%r9)
-	cmpq	$2048, %r10
 	incq	%r9
 	incq	%r10
-	jne	.fp_fmt_wrt_lp_loop_resume
-.fp_fmt_wrt_lp_loop_full:
+	cmpq	$2048, %r10
+	jne	.fp_fmt_wrt_lp_loop_resume	
 	leaq	.fp_fmt_wrt_lp_loop(%rip), %rax
 	jmp	.fp_full_buff
 .fp_fmt_wrt_lp_loop_resume:
@@ -206,17 +205,38 @@ fp86:
 	xorq	%rcx, %rcx
 .fp_fmt_wrt_ok_loop:
 	cmpq	%rcx, %r12
-	je	.fp_resume
+	je	.fp_fmt_wrt_rp
 	movzbl	(%rdi), %eax
 	movb	%al, (%r9)
 	incq	%r9
 	incq	%r10
 	incq	%rcx
 	jmp	.fp_fmt_wrt_ok_loop
-
-
 .fp_fmt_wrt_rp:
-
+	cmpb	$'>', (.pad_twds)
+	jne	.fp_fmt_wrt_reset
+	movq	(.padding), %rax
+	subq	%r12, %rax
+	js	.fp_fmt_wrt_reset
+	jz	.fp_fmt_wrt_reset
+	movq	%rax, %rbx
+	xorq	%rcx, %rcx
+.fp_fmt_wrt_rp_loop:
+	cmpq	%rcx, %rbx
+	je	.fp_fmt_wrt_reset
+	movb	$' ', (%r9)
+	incq	%r9
+	incq	%r10
+	cmpq	$1, %r10
+	jne	.fp_fmt_wrt_rp_loop_resume
+	leaq	.fp_fmt_wrt_rp_loop(%rip), %rax
+	jmp	.fp_full_buff
+.fp_fmt_wrt_rp_loop_resume:
+	incq	%rcx
+	jmp	.fp_fmt_wrt_rp_loop
+.fp_fmt_wrt_reset:
+	movb	$0, (.pad_twds)
+	jmp	.fp_resume
 .fp_resume:
 	incq	%r8
 	jmp	.fp_loop
