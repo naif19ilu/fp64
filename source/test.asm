@@ -1,9 +1,9 @@
-# fp86 - fprintf function for x86_64
+# fp64 - fprintf function for x64
 # 24 Jun 2025
 # This file tests fp86 functionallity
 
 .section .rodata
-	.test: .string ".%>o.\n"
+	.test: .string ".%d %d.\n"
 
 	.str: .string "string"
 
@@ -18,7 +18,7 @@ _start:
 
 	movq	$1, %rdi
 	leaq	.test(%rip), %rsi
-	call	fp86
+	call	fp64
 
  	movq	%rax, %rdi
 	movq	$60, %rax

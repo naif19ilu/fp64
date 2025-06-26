@@ -1,4 +1,4 @@
-# fp86 - fprintf function for x86_64
+# fp64 - fprintf function for x64
 # 24 Jun 2025
 # This file gets all the work done
 
@@ -74,8 +74,8 @@
 	syscall
 .endm
 
-.globl fp86
-# fprintf function for x86_64 usage:
+.globl fp64
+# fprintf function for x64 usage:
 # 1st argument (rdi): file descriptor  8 byte
 # 2nd argument (rsi): fp_format           8 byte
 # 3th argument (rdx): first argument   8 bytes   (if any)
@@ -85,7 +85,7 @@
 # if you have to print more than four variables then you will
 # have to push them into the stack in the reverse order they
 # are nedeed (see README).
-fp86:
+fp64:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	# These 32 bytes are reserved for storing the
@@ -245,7 +245,6 @@ fp86:
 	movb	$'-', (%r11)
 	decq	%r11
 	incq	%r12
-
 	movb	$0, (.args_neg)
 	jmp	.fp_fmt_wrt
 .fp_fmt_wrt:
@@ -360,7 +359,6 @@ fp86:
 
 .ga_return:
 	ret
-
 
 # unknown fp_formatting given
 # example: "%R" like wtf does R mean?

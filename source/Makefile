@@ -1,5 +1,9 @@
-objs = fp86.o test.o
-name = fp86
+# fp64 - fprintf function for x64
+# 24 Jun 2025
+# makefile
+
+objs = fp64.o test.o
+name = fp64
 
 all: $(name)
 
