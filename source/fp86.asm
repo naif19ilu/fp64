@@ -4,7 +4,7 @@
 
 .section .bss
 	.buffer:  .zero 2048
-	.buf_off: .zero 8
+	.totalbt: .zero 8
 	.finalfd: .zero 8
 
 	.tempbff: .zero 2048
@@ -104,12 +104,12 @@ fp86:
 	# r15: holds the current argument
 	movq	%rsi, %r8
 	leaq	.buffer(%rip),  %r9
-	movq	.buf_off(%rip), %r10
+	xorq	%r10, %r10
 	xorq	%rax, %rax
 	xorq	%rdi, %rdi
 	xorq	%rsi, %rsi
 .fp_loop:
-	cmpq	$1, %r10
+	cmpq	$2048, %r10
 	jne	.fp_loop_body
 .fp_nml_full:
 	leaq	.fp_loop(%rip), %rax
@@ -191,10 +191,14 @@ fp86:
 	cmpq	%rcx, %rbx
 	je	.fp_fmt_wrt_ok
 	movb	$' ', (%r9)
+	cmpq	$2048, %r10
 	incq	%r9
 	incq	%r10
-	cmpq	$2048, %r10
-	je	.fatal_1														# FIX THIS
+	jne	.fp_fmt_wrt_lp_loop_resume
+.fp_fmt_wrt_lp_loop_full:
+	leaq	.fp_fmt_wrt_lp_loop(%rip), %rax
+	jmp	.fp_full_buff
+.fp_fmt_wrt_lp_loop_resume:
 	incq	%rcx
 	jmp	.fp_fmt_wrt_lp_loop
 .fp_fmt_wrt_ok:
@@ -222,21 +226,22 @@ fp86:
 .fp_full_buff:
 	pushq	%rax
 	WRITE
-	movq	$0, (.buf_off)
+	addq	%r10, (.totalbt)
 	xorq	%r10, %r10
 	leaq	.buffer(%rip), %r9
 	popq	%rax
 	jmp	*%rax
 .fp_fin:
+	addq	%r10, (.totalbt)
 	WRITE
-	movq	$16, (.stk_off)
-	movq	$0,  (.buf_off)
+	movq	$8, (.stk_off)
+	movq	(.totalbt), %r8
 	cmpq	$1, (fp_reg_backup)
 	jne	.fp_return
 	BACKUP_Z
 .fp_return:
 	movq	$0, (fp_reg_backup)
-	movq	%r10, %rax
+	movq	%r8, %rax
 	leave
 	ret
 

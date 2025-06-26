@@ -3,7 +3,7 @@
 # This file tests fp86 functionallity
 
 .section .rodata
-	.test: .string "holacomoestas\n"
+	.test: .string "h%<c\n"
 
 .section .text
 
