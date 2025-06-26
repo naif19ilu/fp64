@@ -7,7 +7,17 @@
 	.buf_off: .zero 8
 	.finalfd: .zero 8
 
-	.argbuff: .zero 64
+ 	# Temporary storage for argument before
+	# write it into real buffer
+	#
+	# This buffer length's 2048 - buf_off
+	.tempbff: .zero 2048
+	.tmp_off: .zero 8
+
+ 	# padding: argument's padding
+	# pad_twds: either left or right padding
+	.padding:  .zero 8
+	.pad_twds: .zero 1
 
 .section .rodata
 	.buffer_length: .quad 2048
@@ -93,6 +103,9 @@ fp86:
 	#  r8: holds fp_format string content
 	#  r9: holds buffer
 	# r10: holds number of bytes written so far into buffer
+	# r11: holds the temporary buffer
+	# r12: holds the bytes left in buffer as the argument is being written in tempbff
+	# r13: holds the tempbff's length
 	# r15: holds the current argument
 	movq	%rsi, %r8
 	leaq	.buffer(%rip),  %r9
@@ -108,36 +121,96 @@ fp86:
 	je	.fp_fiin
 	cmpb	$'%', %al
 	je	.fp_format
+	# if no format is provided then store this character
+	# as it is within buffer
 	movb	%al, (%r9)
 	incq	%r9
 	incq	%r10
 	jmp	.fp_resume
 .fp_format:
 	incq	%r8
-	movzbl	(%r8), %eax
-	cmpb	$'%', %al
+	movzbl	(%r8), %edi
+	cmpb	$'%', %dil
+	# padding is given via function argument, thus
+	# if padd is requested an argument must be taken
 	je	.fp_fmt_per
-
+	cmpb	$'<', %dil
+	je	.fp_fmt_pad
+	cmpb	$'>', %dil
+	je	.fp_fmt_pad
+.fp_fmt_arg:
+ 	# Setting up temporary buffer
+	leaq	.tempbff(%rip), %r11
+	movq	%r10, %rax
+	subq	$2048, %rax
+	movq	%rax, %r12
+	xorq	%r13, %r13
 	call	.GetArg
-
-	cmpb	$'<', %al
-	je	.fp_fmt_lt
-	cmpb	$'>', %al
-	je	.fp_fmt_rg
-.fp_fmt_noi:
-	cmpb	$'c', %al
-	je	.fp_fm_ch
+	# characters...
+	cmpb	$'c', %dil
+	je	.fp_fmt_ch
+	# strings...
+	cmpb	$'s', %dil
+	je	.fp_fmt_st
 	jmp	.fatal_1
 .fp_fmt_per:
 	movb	$'%', (%r9)
 	incq	%r9
 	incq	%r10
 	jmp	.fp_resume
-.fp_fmt_lt:
+.fp_fmt_pad:
+	call	.GetArg
+	movq	%r15, (.padding)
+	movb	%dil, (.pad_twds)
+	jmp	.fp_fmt_arg
+.fp_fmt_ch:
+	movb	%r15b, (%r11)
+	incq	%r12
+	movq	$1, %r13
+	jmp	.fp_fmt_wrt
 
-.fp_fmt_rg:
+.fp_fmt_st:
 
-.fp_fm_ch:
+
+.fp_fmt_wrt:
+	xorq	%rdi, %rdi
+	movb	(.pad_twds), %dil
+	cmpb	$'<', %dil
+	je	.fp_fmt_wrt_lp
+	jmp	.fp_fmt_wrt_ok
+
+.fp_fmt_wrt_lp:
+	movq	(.padding), %rax
+	subq	%r13, %rax
+	js	.fp_fmt_wrt_ok
+	movq	%rax, %rbx
+	xorq	%rcx, %rcx
+.fp_fmt_wrt_lp_loop:
+	cmpq	%rcx, %rbx
+	je	.fp_fmt_wrt_ok
+	movb	$' ', (%r9)
+	incq	%r9
+	incq	%r10
+	cmpq	$2048, %r10
+	je	.fatal_1														# FIX THIS
+	incq	%rcx
+	jmp	.fp_fmt_wrt_lp_loop
+
+.fp_fmt_wrt_ok:
+	leaq	.tempbff(%rip), %rdi
+	xorq	%rcx, %rcx
+.fp_fmt_wrt_ok_loop:
+	cmpq	%rcx, %r13
+	je	.fp_resume
+	movzbl	(%rdi), %eax
+	movb	%al, (%r9)
+	incq	%r9
+	incq	%r10
+	incq	%rcx
+	jmp	.fp_fmt_wrt_ok_loop
+
+
+.fp_fmt_wrt_rp:
 
 .fp_resume:
 	incq	%r8

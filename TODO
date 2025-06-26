@@ -6,7 +6,7 @@
     - Get arguments pushed into stack               [ ]
     - Left padding                                  [ ]
     - Right padding                                 [ ]
-    - Character formatting                          [ ]
+    - Character formatting                          [x]
     - Argument buffer                               [ ]
     - String formatting                             [ ]
     - Decimal formatting                            [ ]
