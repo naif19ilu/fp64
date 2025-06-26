@@ -171,8 +171,24 @@ fp86:
 	movb	%r15b, (%r11)
 	movq	$1, %r12
 	jmp	.fp_fmt_wrt
-
 .fp_fmt_st:
+	cmpq	$0, %r15
+	je	.fp_resume
+.fp_fmt_st_loop:
+	movzbl	(%r15), %edi
+	cmpb	$0, %dil
+	je	.fp_fmt_wrt
+
+	cmpq	$2048, %r12
+	je	.fatal_2
+
+	movb	%dil, (%r11)
+	incq	%r11
+	incq	%r12
+	incq	%r15
+
+	jmp	.fp_fmt_st_loop
+
 
 .fp_fmt_wrt:
 	cmpb	$'<', (.pad_twds)
@@ -211,6 +227,7 @@ fp86:
 	incq	%r9
 	incq	%r10
 	incq	%rcx
+	incq	%rdi
 	jmp	.fp_fmt_wrt_ok_loop
 .fp_fmt_wrt_rp:
 	cmpb	$'>', (.pad_twds)
