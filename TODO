@@ -9,10 +9,10 @@
     - Argument buffer                               [x]
     - String formatting                             [x]
     - Decimal formatting                            [x]
+    - Binary formatting                             [x]
     - Get arguments pushed into stack               [ ]
     - Proper error handling                         [ ]
 
-    - Binary formatting                             [ ]
     - Hexadecimal formatting                        [ ]
     - Octal formatting                              [ ]
     - Boolean formatting                            [ ] 
