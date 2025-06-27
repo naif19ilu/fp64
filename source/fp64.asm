@@ -28,6 +28,12 @@
 	.true: .string "True"
 	.false: .string "False"
 
+	.f1_msg: .string "fp64: unknown format provided\n"
+	.f1_len: .quad   30
+
+	.f2_msg: .string "fp64: argument overflow\n"
+	.f2_len: .quad   24
+
 .section .data
  	# offset to arguments given as registers (rdx, rcx, r8 and r9)
 	.reg_arg_off: .quad 8
@@ -75,7 +81,12 @@
 	syscall
 .endm
 
-.macro ABORT status
+.macro ABORT msg, len, status
+	leaq	\msg, %rsi
+	movq	\len, %rdx
+	movq	$2, %rdi
+	movq	$1, %rax
+	syscall
 	movq	\status, %rdi
 	movq	$60, %rax
 	syscall
@@ -379,7 +390,6 @@ fp64:
 	movq	%r8, %rax
 	leave
 	ret
-
 .GetArg:
 	movq	(.reg_arg_off), %rbx
 	cmpq	$32, %rbx
@@ -401,10 +411,9 @@ fp64:
 # unknown fp_formatting given
 # example: "%R" like wtf does R mean?
 .fatal_1:
-	ABORT	$-1
+	ABORT	.f1_msg(%rip), .f1_len(%rip), $-1
 
 # argument causes buffer overflow
 # example: A string is more than 2048 bytes long
 .fatal_2:
-	ABORT	$-2
-
+	ABORT	.f2_msg(%rip), .f2_len(%rip), $-2

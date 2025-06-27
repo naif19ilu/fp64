@@ -14,4 +14,4 @@
     - Hexadecimal formatting                        [x]
     - Boolean formatting                            [x]
     - Get arguments pushed into stack               [x]
-    - Proper error handling                         [ ]
+    - Proper error handling                         [x]
