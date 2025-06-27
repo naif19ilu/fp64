@@ -12,6 +12,6 @@
     - Binary formatting                             [x]
     - Octal formatting                              [x]
     - Hexadecimal formatting                        [x]
-    - Boolean formatting                            [ ] 
+    - Boolean formatting                            [x]
     - Get arguments pushed into stack               [ ]
     - Proper error handling                         [ ]

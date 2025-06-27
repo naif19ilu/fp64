@@ -25,6 +25,9 @@
 .section .rodata
 	.buffer_length: .quad 2048
 
+	.true: .string "True"
+	.false: .string "False"
+
 .section .data
 	.stk_off: .quad 8
 
@@ -164,6 +167,9 @@ fp64:
 	je	.fp_fmt_oc
 	cmpb	$'x', %dil
 	je	.fp_fmt_hx
+	# boolean...
+	cmpb	$'B', %dil
+	je	.fp_fmt_bl
 	jmp	.fatal_1
 .fp_fmt_per:
 	movb	$'%', (%r9)
@@ -260,6 +266,15 @@ fp64:
 	decq	%r11
 	incq	%r12
 	movb	$0, (.args_neg)
+	jmp	.fp_fmt_wrt
+.fp_fmt_bl:
+	incq	%r12
+	cmpq	$0, %r15
+	jne	.fp_fmt_bl_1
+	movb	$'F', (%r11)
+	jmp	.fp_fmt_wrt
+.fp_fmt_bl_1:
+	movb	$'T', (%r11)
 	jmp	.fp_fmt_wrt
 .fp_fmt_wrt:
 	cmpb	$'<', (.pad_twds)
