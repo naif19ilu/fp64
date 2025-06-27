@@ -3,7 +3,7 @@
 # This file tests fp86 functionallity
 
 .section .rodata
-	.test: .string ".%d %d.\n"
+	.test: .string ".%>x (hex).\n"
 
 	.str: .string "string"
 
@@ -14,7 +14,7 @@
 _start:
 
 	movq	$5, %rdx
-	movq	$10, %rcx
+	movq	$-15, %rcx
 
 	movq	$1, %rdi
 	leaq	.test(%rip), %rsi

@@ -162,7 +162,8 @@ fp64:
 	je	.fp_fmt_bn
 	cmpb	$'o', %dil
 	je	.fp_fmt_oc
-
+	cmpb	$'x', %dil
+	je	.fp_fmt_hx
 	jmp	.fatal_1
 .fp_fmt_per:
 	movb	$'%', (%r9)
@@ -209,6 +210,9 @@ fp64:
 .fp_fmt_oc:
 	movq	$8, %rbx
 	jmp	.fp_fmt_num
+.fp_fmt_hx:
+	movq	$16, %rbx
+	jmp	.fp_fmt_num
 .fp_fmt_num:
 	cmpq	$0, %r15
 	jg	.fp_fmt_num_set
@@ -233,8 +237,18 @@ fp64:
 	cmpq	$2048, %r12
 	je	.fatal_2
 	divq	%rbx
+	# if the divisor is 16 the process is a bit
+	# different
+	cmpb	$10, %dl
+	jge	.fp_fmt_num_loop_hex
 	movb	%dl, (%r11)
 	addb	$'0', (%r11)
+	jmp	.fp_fmt_num_loop_resume
+.fp_fmt_num_loop_hex:
+	movb	%dl, (%r11)
+	addb	$'7', (%r11)
+	jmp	.fp_fmt_num_loop_resume
+.fp_fmt_num_loop_resume:
 	decq	%r11
 	incq	%r12
 	xorq	%rdx, %rdx
