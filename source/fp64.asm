@@ -29,7 +29,11 @@
 	.false: .string "False"
 
 .section .data
-	.stk_off: .quad 8
+ 	# offset to arguments given as registers (rdx, rcx, r8 and r9)
+	.reg_arg_off: .quad 8
+
+	# offset to arguments pushed into the stack
+	.stk_arg_off: .quad 16
 
  	# This is a global flag used to know whether
 	# store all r8 throught r9 registers before using
@@ -364,7 +368,8 @@ fp64:
 .fp_fin:
 	addq	%r10, (.totalbt)
 	WRITE
-	movq	$8, (.stk_off)
+	movq	$8, (.reg_arg_off)
+	movq	$16, (.stk_arg_off)
 	movq	(.totalbt), %r8
 	cmpq	$1, (fp_reg_backup)
 	jne	.fp_return
@@ -376,16 +381,20 @@ fp64:
 	ret
 
 .GetArg:
-	movq	(.stk_off), %rbx
+	movq	(.reg_arg_off), %rbx
 	cmpq	$32, %rbx
 	jg	.ga_stack
 	leaq	(%rbp), %rax
 	subq	%rbx, %rax
 	movq	(%rax), %r15
-	addq	$8, (.stk_off)
+	addq	$8, (.reg_arg_off)
 	jmp	.ga_return
 .ga_stack:
-
+	movq	(.stk_arg_off), %rbx	
+	leaq	(%rbp), %rax
+	addq	%rbx, %rax
+	movq	(%rax), %r15
+	addq	$8, (.stk_arg_off)
 .ga_return:
 	ret
 
