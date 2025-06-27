@@ -1,0 +1,50 @@
+
+    This file describes the project implementation.
+
+    fp64 works by a second 2048 bytes long buffer which will store character by character
+    what the program finds along the format string, it will copy everything that is not
+    formatted, for example "hola" has no format, therefore the buffer will be an identical
+    copy of format string, then it will print it via syscall (i mean, how else?).
+    
+    When the program finds a format (%) it will attempt to know the formatting type, if
+    the format does exist, then it will proceed to take the next argument either given
+    via register or via stack and do write that argument to a third buffer which is used
+    to store the arguments in, this is needed due to padding.
+
+    for character, string and boolean formats, the value is written into the third
+    buffer as it is and then it is copied into the original, i know this can sound
+    redundant but is is actually needed when a padding is specified
+
+    - padding
+    When a padding is specified the program will first take the argument write it
+    into the third buffer in order to parse it and know its length as a string, once
+    the program has that information it will add the padding
+
+    in order to know how many spaces put as padding we need to take the padding given
+    and the argument's length and do a simple subtraction (padd - len), if that number
+    is negative or zero, no padding is added
+
+    * left padding: first add N spaces in the original buffer and then copy third buffer's content
+    * right padding: first copy the thid buffer's content and then add N spaces
+
+    So the third buffer is used to meassure the argument's length.
+
+    Another use of the third buffer is when parsing numbers, since the numbers are given
+    as real numbers, we need to apply an algorithm to get digit by digit, the thing is
+    that they must be written in the reverse order they are gotten, so we cannot write directly
+    into the real buffer since the number would be reverse, for example if 123 is given it will
+    print 321 instead LoL; In order to solve this we need to start writing from the end of the
+    third buffer, this way we solve the problem :) so the third buffer is so fucking important
+    godamn
+
+    Do not worry about buffer overflow, when the main buffer is full fp64 will print
+    the current content (like a fflush) and then it will continue the format string, like
+
+    "...something %c"
+                ` suppose that at this point the buffer is full, so fp64 will print
+                  what buffer holds right now
+    
+    stdout: ...something
+
+    once it is printed the buffer will be reseted and will continue at ' ', one character
+    after the buffer got full
