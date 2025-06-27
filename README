@@ -1,0 +1,48 @@
+
+    fp64 - fprintf function for x64
+
+    Since you can only do raw write syscalls in x64 and it does not
+    allow you to format the output i came up with this funcion which
+    behaves like fprintf function found in C, for sure is not as
+    powerfull as the C one but it gets the job done :)
+
+    in order to use this funcion you need to provide the following
+    arguments
+
+    rdi: file descriptor to write in
+    rsi: format string
+    rdx: first format argument
+    rcx: second format argument
+    r8:  third format argument
+    r9:  fifth format argument
+
+    if you need to provide more arguments you will need to push them
+    into the stack in the reverse order you want to use them (see
+    source/test.asm for an actual example)
+
+    If you pushed values into the stack you will need to pop them
+    or add X number of bytes to rsp, where X is the number of arguments
+    pushed times 8, if you do not do it they will be there for the rest
+    of your program
+
+    The available formats are:
+
+    - c  for Characters
+    - s  for Strings
+    - d  for Decimal
+    - x  for Hexadecimal
+    - o  for Octal
+    - b  for Binary
+    - B  for Boolean
+
+    If you're using r8, r9, r10, ..., r15 before calling the fp64
+    function and you do not want to lose those values you will need
+    to set 'fp_reg_backup' flag to 1 like this
+
+    movb    $1, (fp_reg_backup)
+
+    in order to do a back up before setting new values to these
+    registers since fp64 uses them
+
+    naif19ta
+    Jun 27 2025
