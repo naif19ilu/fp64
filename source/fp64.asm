@@ -95,7 +95,7 @@
 .globl fp64
 # fprintf function for x64 usage:
 # 1st argument (rdi): file descriptor  8 byte
-# 2nd argument (rsi): fp_format           8 byte
+# 2nd argument (rsi): fp_format        8 byte
 # 3th argument (rdx): first argument   8 bytes   (if any)
 # 4th argument (rcx): second argument  8 bytes   (if any)
 # 5th argument (r8 ): third argument   8 bytes   (if any)
