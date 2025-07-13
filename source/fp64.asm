@@ -1,7 +1,3 @@
-# fp64 - fprintf function for x64
-# 24 Jun 2025
-# This file gets all the work done
-
 .section .bss
 	.buffer:  .zero 2048
 	.totalbt: .zero 8
